@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request,redirect, url_for
 from db import obtener_conexion
+from flask import flash
 
 
 app = Flask(__name__)
+app.secret_key = 'clave123'
 
 
 
@@ -21,12 +23,21 @@ def crear():
     if request.method == 'POST':
         nombre = request.form['nombre']
         correo = request.form['correo']
-        conexion = obtener_conexion()
-        cursor = conexion.cursor()
-        cursor.execute("INSERT INTO usuarios (nombre, correo) VALUES (%s, %s)", (nombre,correo))
-        conexion.commit()
-        conexion.close()
-        return redirect(url_for('index'))
+
+        if not nombre or not correo:
+            flash('Los campos son obligatorios', 'error')
+            return render_template('crear.html')
+        try:
+            conexion = obtener_conexion()
+            cursor = conexion.cursor()
+            cursor.execute("INSERT INTO usuarios (nombre, correo) VALUES (%s, %s)", (nombre,correo))
+            conexion.commit()
+            conexion.close()
+            flash('El usuario fue creado!', 'success')
+            return redirect(url_for('index'))
+        except Exception as e:
+            flash(f'Ocurrio un error: {str(e)}', 'error')
+            return render_template('crear.html')
     return render_template('crear.html')
 
 
